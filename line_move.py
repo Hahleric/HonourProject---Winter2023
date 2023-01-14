@@ -15,7 +15,7 @@ LINE_FIGURE_SIZE = (15, 5)
 # number of robots we have in figure
 ROBOT_NUMBER = 10
 # length of the line
-N = 200
+N = 20
 
 # creating an x-axis
 fig = plt.figure(figsize=LINE_FIGURE_SIZE)
@@ -44,16 +44,38 @@ for i in robot_list:
                           )
 
 
+def get_two_random_robots():
+    return random.sample(robot_points, 2)
+
+
 # function update for matlibplot animation, it will move r1 to a random position in every frame
-def update(n):
+
+def line_update():
+    to_move_positions = []
+    for robot in robot_points:
+        robot1, robot2 = get_two_random_robots()
+        distance_to_r1 = abs(robot1.get_xdata() - robot.get_xdata())
+        distance_to_r2 = abs(robot2.get_xdata() - robot.get_xdata())
+        if distance_to_r1 < distance_to_r2:
+            to_move_positions.append(robot1.get_xdata())
+        else:
+            to_move_positions.append(robot2.get_xdata())
 
     for m in range(len(robot_points)):
-        robot_points[m].set_data([random.randint(1, N)], [0])
+        robot_points[m].set_xdata(to_move_positions[m])
+
+
+def update(n):
+    line_update()
 
     for m in range(len(robot_list)):
-        robot_list[m].ano.set_position((robot_points[m].get_xdata()[0], robot_points[m].get_ydata()[0]))
+        print(robot_list[m].name, robot_points[m].get_xdata())
+        robot_list[m].ano.set_position((robot_points[m].get_xdata(), robot_points[m].get_ydata()[0]))
+    # if robot_points[0].get_xdata()[0] == robot_points[1].get_xdata()[0]:
+    #     print("done")
+    #     ani.pause()
     return robot_points
 
 
-ani = FuncAnimation(fig, update, interval=1000)
+ani = FuncAnimation(fig, update, interval=2000, frames=60)
 plt.show()
