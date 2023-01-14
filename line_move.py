@@ -13,7 +13,7 @@ matplotlib.use("TkAgg")
 # figure for line, 15*5 is the size of the figure
 LINE_FIGURE_SIZE = (15, 5)
 # number of robots we have in figure
-ROBOT_NUMBER = 10
+ROBOT_NUMBER = 200
 # length of the line
 N = 20
 
@@ -65,17 +65,28 @@ def line_update():
         robot_points[m].set_xdata(to_move_positions[m])
 
 
-def update(n):
-    line_update()
+def is_finished():
+    for i in range(len(robot_points)):
+        if robot_points[i].get_xdata()[0] != robot_points[0].get_xdata()[0]:
+            return False
+    return True
 
+
+t = 0
+
+
+def update(n):
+    global t
+    t += 1
+    line_update()
     for m in range(len(robot_list)):
-        print(robot_list[m].name, robot_points[m].get_xdata())
         robot_list[m].ano.set_position((robot_points[m].get_xdata(), robot_points[m].get_ydata()[0]))
-    # if robot_points[0].get_xdata()[0] == robot_points[1].get_xdata()[0]:
-    #     print("done")
-    #     ani.pause()
+    if is_finished():
+        print("done")
+        print(t)
+        ani.pause()
     return robot_points
 
 
-ani = FuncAnimation(fig, update, interval=2000, frames=60)
+ani = FuncAnimation(fig, update, interval=2, frames=60)
 plt.show()
