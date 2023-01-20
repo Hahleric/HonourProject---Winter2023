@@ -10,11 +10,11 @@ matplotlib.use("TkAgg")
 # figure for line, 15*5 is the size of the figure
 PLAIN_FIGURE_SIZE = (15, 5)
 # number of robots we have in figure
-ROBOT_NUMBER = 20
+ROBOT_NUMBER = 10
 # length of the line
 N = 200
 # random pick number
-RANDOM_PICK_NUMBER = 5
+RANDOM_PICK_NUMBER = 2
 
 
 # creating a cartesian coordinate system
@@ -67,7 +67,7 @@ def line_update(robot_points, robot_list):
 
         for i in random_r:
             # get the distance between robot and random robot
-            distance = np.sqrt((robot.get_xdata() - i.get_xdata()) ** 2 + (robot.get_ydata() - i.get_ydata()) ** 2)
+            distance = (robot.get_xdata() - i.get_xdata()) ** 2 + (robot.get_ydata() - i.get_ydata()) ** 2
         # get the index of minimum distance
         min_index = np.argmin(distance)
         # get the position of minimum distance
@@ -82,12 +82,14 @@ def line_update(robot_points, robot_list):
 
 def is_finished(robot_points):
     for i in range(len(robot_points)):
-        if robot_points[i].get_xdata()[0] != robot_points[0].get_xdata()[0]:
+        if robot_points[i].get_xdata() != robot_points[0].get_xdata():
             return False
     return True
 
 
 t = 0
+
+
 def update(n, robot_list, robot_points):
     for m in range(len(robot_list)):
         robot_list[m].ano.set_position((robot_points[m].get_xdata(), robot_points[m].get_ydata()))
@@ -100,7 +102,36 @@ def update(n, robot_list, robot_points):
         print("done")
         print(t)
         ani.pause()
-    return robot_points
+    # return robot_points
+
+
+def move_till_finished(robot_list, robot_points):
+    count = 0
+    while not is_finished(robot_points):
+        count += 1
+        line_update(robot_points, robot_list)
+        for m in range(len(robot_list)):
+            robot_list[m].ano.set_position((robot_points[m].get_xdata(), robot_points[m].get_ydata()))
+    return count
+
+
+def plain_move(robot_list, robot_points):
+    n = 0
+    lst = []
+    while n < 10000:
+        count = move_till_finished(robot_list, robot_points)
+        n += 1
+        # random reset the position of robots
+        for i in range(len(robot_points)):
+            robot_points[i].set_xdata(random.randint(1, N))
+            robot_points[i].set_ydata(random.randint(1, N))
+
+        lst.append(count)
+
+    print(n)
+    print(lst)
+    lst = np.array(lst)
+    print("average: ", np.average(lst))
 
 
 if __name__ == "__main__":
@@ -109,5 +140,5 @@ if __name__ == "__main__":
     r_list, r_points = create_robots(axis)
     print(r_list)
     print(r_points)
-    ani = FuncAnimation(fig, update, interval=1000, frames=60, fargs=(r_list, r_points))
-    plt.show(block=True)
+    # ani = FuncAnimation(fig, update, interval=1000, frames=60, fargs=(r_list, r_points))
+    plain_move(r_list, r_points)
