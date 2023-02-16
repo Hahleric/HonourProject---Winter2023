@@ -10,15 +10,16 @@ import matplotlib
 from matplotlib.animation import FuncAnimation
 from plain_move import plain_move
 
-matplotlib.use("TkAgg")
 # figure for line, 15*5 is the size of the figure
 LINE_FIGURE_SIZE = (15, 5)
 # number of robots we have in figure
-ROBOT_NUMBER = 10
+ROBOT_NUMBER = 20
 # length of the line
 N = 32768
 # random pick number
-RANDOM_PICK_NUMBER = 1
+RANDOM_PICK_NUMBER = 3
+# manually set the position of robots
+MANUAL_POSITION = True
 
 # creating an x-axis
 fig = plt.figure(figsize=LINE_FIGURE_SIZE)
@@ -30,9 +31,20 @@ axis.axis["x"] = axis.new_floating_axis(0, 0, axis_direction="bottom")
 plt.xlim(-N, N)
 
 # create robots based on numbers, add their x and y to a list
-robot_list = []
-for i in range(ROBOT_NUMBER):
-    robot_list.append(r.Robot(str(i + i), random.randint(-N, N), 0))
+if MANUAL_POSITION:
+    robot_list = []
+    x_lst = [i for i in range(ROBOT_NUMBER)]
+    for i in range(ROBOT_NUMBER):
+        # name = input("Please input robot name: ")
+        # x = int(input("Please input robot x: "))
+        # x_lst.append(x)
+        y = 0
+        robot = r.Robot(x_lst[i], x_lst[i], y)
+        robot_list.append(robot)
+else:
+    robot_list = []
+    for i in range(ROBOT_NUMBER):
+        robot_list.append(r.Robot(str(i + i), random.randint(-N, N), 0))
 
 print([m.name for m in robot_list], [m.x for m in robot_list])
 robots_x = [i.x for i in robot_list]
@@ -74,7 +86,6 @@ def line_update(robot_p, robot_l):
         # get the position of minimum distance
         min_position = random_r[min_index].get_xdata(), random_r[min_index].get_ydata()
         to_move_positions.append(min_position)
-    print([m.name for m in robot_l], [m for m in to_move_positions])
     for m in range(len(robot_p)):
         x, y = to_move_positions[m]
         robot_p[m].set_markersize(6.0)
@@ -82,7 +93,7 @@ def line_update(robot_p, robot_l):
         robot_p[m].set_ydata(y)
 
 
-def is_finished():
+def is_finished(robot_points):
     for i in range(len(robot_points)):
         if robot_points[i].get_xdata()[0] != robot_points[0].get_xdata()[0]:
             return False
@@ -102,7 +113,8 @@ def update(n):
         robot_list[m].ano.set_position((robot_points[m].get_xdata(), robot_points[m].get_ydata()[0]))
     for i in range(len(robot_points)):
         for j in range(i, len(robot_points)):
-            if robot_points[i].get_xdata() == robot_points[j].get_xdata() and robot_points[i].get_ydata() == robot_points[j].get_ydata():
+            if robot_points[i].get_xdata() == robot_points[j].get_xdata() and robot_points[i].get_ydata() == \
+                    robot_points[j].get_ydata():
                 size = robot_points[i].get_markersize()
                 robot_points[i].set_markersize(size + 3)
                 robot_points[j].set_markersize(size + 3)
@@ -115,5 +127,81 @@ def update(n):
 
 # ani = FuncAnimation(fig, update, interval=1000, frames=60)
 # plt.show()
+
+def move_till_finished(robot_list, robot_points):
+    count = 0
+    while not is_finished(robot_points):
+        count += 1
+        line_update(robot_points, robot_list)
+        for m in range(len(robot_list)):
+            robot_list[m].ano.set_position((robot_points[m].get_xdata(), robot_points[m].get_ydata()))
+    final_position = robot_points[0].get_xdata()
+    return count, final_position
+
+
+def plain_move(robot_list, robot_points):
+    n = 0
+    lst = []
+    positions = []
+    original_list = robot_list.copy()
+    original_poinrts = robot_points.copy()
+    while n < 10000:
+        count, final_position = move_till_finished(robot_list, robot_points)
+        n += 1
+        # random reset the position of robots
+        if MANUAL_POSITION:
+            for i in range(len(robot_points)):
+                robot_points[i].set_xdata(np.array([x_lst[i]]))
+        else:
+            for i in range(len(robot_points)):
+                robot_points[i].set_xdata(np.array([random.randint(-N, N)]))
+                robot_points[i].set_ydata(np.array([random.randint(-N, N)]))
+        positions.append(final_position)
+        lst.append(count)
+        print(n)
+
+    print(lst)
+    lst = np.array(lst)
+    # count the count of integers in positions are between 0 and 6
+    in_range_count = 0
+    in_range_positions = []
+    for i in range(len(positions)):
+        if 0 <= positions[i] <= 7:
+            in_range_count += 1
+            in_range_positions.append(positions[i])
+
+    # # if the length of the element is smaller than the largest length element, add 2's to the end of the list till it is the same length
+    # for i in range(len(positions)):
+    #     if len(positions[i]) < len(positions[np.argmax(lst)]):
+    #         positions[i] = np.append(positions[i], np.full(len(positions[np.argmax(lst)]) - len(positions[i]), 1))
+    # positions = np.array(positions)
+
+    # get average number of positions of robots in each step
+    # print(positions)
+    # positions = np.array(positions, dtype='longlong')
+
+    # positions = np.mean(positions, axis=0)
+    # plt.subplot(1, 2, 2)
+    # plt.plot(positions)
+    # plt.show(block=False)
+    # print(positions)
+    print("number of picks", RANDOM_PICK_NUMBER)
+    print("largest iteration number", np.amax(lst))
+    print("smallest iteration number", np.amin(lst))
+    print("average iterations to gather: ", np.average(lst))
+    print("starting positions: ", x_lst)
+    print("average of starting positions", np.average(x_lst))
+    print("avarage of final positions: ", np.average(positions))
+    print("how many final positions are in range(0, 7): ", in_range_count)
+    print("average of final positions in range(0, 7): ", np.average(in_range_positions))
+    # print all number of points landing on each position
+    for i in range(ROBOT_NUMBER):
+        print("number of times position", i, "is landed on: ", positions.count(i))
+
+    point_counts = [positions.count(i) for i in range(ROBOT_NUMBER)]
+    plt.subplot(1, 2, 2)
+    plt.plot(point_counts)
+    plt.show(block=False)
+
 
 plain_move(robot_list, robot_points)

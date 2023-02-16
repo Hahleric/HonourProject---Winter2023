@@ -3,11 +3,11 @@ import random
 import numpy as np
 import argparse
 
-ROBOT_NUMBER = 5
+ROBOT_NUMBER = 100
 # length of the line
 N = 32768
 # random pick number
-RANDOM_PICK_NUMBER = 3
+RANDOM_PICK_NUMBER = 5
 
 
 def create_robots(manual):
