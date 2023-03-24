@@ -1,5 +1,6 @@
 class Robot:
     ano = None
+    broken = False
 
     def __init__(self, name, x, y):
         self.name = name
@@ -24,6 +25,8 @@ class Robot:
     def set_name(self, name):
         self.name = name
 
+    def set_status(self, broken):
+        self.broken = broken
 
 
 

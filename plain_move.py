@@ -1,21 +1,23 @@
 import numpy
 import numpy as np
 import mpl_toolkits.axisartist as ax
+from numpy import sort
+
 import Robot as r
 import random
 import matplotlib.pyplot as plt
 import matplotlib
 import argparse
 from matplotlib.animation import FuncAnimation
-
+from matplotlib.animation import PillowWriter
 # figure for line, 15*5 is the size of the figure
 PLAIN_FIGURE_SIZE = (15, 5)
 # number of robots we have in figure
-ROBOT_NUMBER = 3
+ROBOT_NUMBER = 10
 # length of the line
 N = 32768
 # random pick number
-RANDOM_PICK_NUMBER = 5
+RANDOM_PICK_NUMBER = 2
 
 
 # creating a cartesian coordinate system
@@ -57,6 +59,9 @@ def create_robots(axis, manual_flag):
         for i in range(ROBOT_NUMBER):
             robot_list.append(r.Robot(str(1 + i), random.randint(-N, N), random.randint(-N, N)))
 
+        # set only one robot to Broken
+        robot_list[0].set_status(True)
+
         # print([m.name for m in robot_list], [(m.x, m.y) for m in robot_list])
         robots_x = [i.x for i in robot_list]
         robots_y = [i.y for i in robot_list]
@@ -82,6 +87,7 @@ def get_random_robots(robot_points):
 
 def line_update(robot_points, robot_list):
     to_move_positions = []
+    index = 0
     for robot in robot_points:
         random_r = get_random_robots(robot_points)
         distance = np.array([], dtype='longlong')
@@ -97,8 +103,11 @@ def line_update(robot_points, robot_list):
         min_index = np.random.choice(min_indices[0])
         # get the position of minimum distance
         min_position = random_r[min_index].get_xdata(), random_r[min_index].get_ydata()
-        to_move_positions.append(min_position)
-
+        if robot_list[index].broken:
+            to_move_positions.append((robot.get_xdata(), robot.get_ydata()))
+        else:
+            to_move_positions.append(min_position)
+        index += 1
     # print([m.name for m in robot_list], [m for m in to_move_positions])
     for m in range(len(robot_points)):
         x, y = to_move_positions[m]
@@ -109,10 +118,10 @@ def line_update(robot_points, robot_list):
     return len(np.unique(to_move_positions, axis=0))
 
 
-
 def is_finished(robot_points):
     for i in range(len(robot_points)):
-        if robot_points[i].get_xdata() != robot_points[0].get_xdata() or robot_points[i].get_ydata() != robot_points[0].get_ydata():
+        if robot_points[i].get_xdata() != robot_points[0].get_xdata() or robot_points[i].get_ydata() != robot_points[
+            0].get_ydata():
             return False
     return True
 
@@ -126,21 +135,24 @@ def update(n, robot_list, robot_points):
     global t
     t += 1
     line_update(robot_points, robot_list)
+
     for m in range(len(robot_list)):
         robot_list[m].ano.set_position((robot_points[m].get_xdata(), robot_points[m].get_ydata()))
-
+    print("here?")
     # increase the size of point based on the number of robots on that point
     for i in range(len(robot_points)):
         for j in range(i, len(robot_points)):
-            if robot_points[i].get_xdata() == robot_points[j].get_xdata() and robot_points[i].get_ydata() == robot_points[j].get_ydata():
+            if robot_points[i].get_xdata() == robot_points[j].get_xdata() and robot_points[i].get_ydata() == \
+                    robot_points[j].get_ydata():
                 size = robot_points[i].get_markersize()
                 robot_points[i].set_markersize(size + 3)
                 robot_points[j].set_markersize(size + 3)
+
     if is_finished(robot_points):
         print("done")
         print(t)
         ani.pause()
-    # return robot_points
+    return robot_points
 
 
 def move_till_finished(robot_list, robot_points):
@@ -159,7 +171,7 @@ def plain_move(robot_list, robot_points):
     n = 0
     lst = []
     positions = []
-    while n < 100000:
+    while n < 1000:
         count, number_of_positions = move_till_finished(robot_list, robot_points)
         n += 1
         # random reset the position of robots
@@ -170,29 +182,30 @@ def plain_move(robot_list, robot_points):
         lst.append(count)
         print(n)
 
-
     print(lst)
     lst = np.array(lst)
-    # if the length of the element is smaller than the largest length element, add 2's to the end of the list till it is the same length
+    # if the length of the element is smaller than the largest length element, add 2's to the end of the list till it
+    # is the same length
     for i in range(len(positions)):
         if len(positions[i]) < len(positions[np.argmax(lst)]):
             positions[i] = np.append(positions[i], np.full(len(positions[np.argmax(lst)]) - len(positions[i]), 1))
     positions = np.array(positions)
-
-
 
     # get average number of positions of robots in each step
     print(positions)
     positions = np.array(positions, dtype='longlong')
 
     positions = np.mean(positions, axis=0)
-    plt.subplot(1,2,2)
-    plt.plot(positions)
+    plt.subplot(1, 2, 2)
+
+    lst = sort(lst)
+    print(lst)
+    plt.plot(lst)
     plt.show(block=False)
-    print(positions)
     print("largest", np.amax(lst))
     print("smallest", np.amin(lst))
     print("average: ", np.average(lst))
+    return np.average(lst)
 
 
 if __name__ == "__main__":
@@ -200,10 +213,19 @@ if __name__ == "__main__":
     parser.add_argument("-m", "--manual", help="manual mode", action="store_true")
     args = parser.parse_args()
     fig, axis = create_plain()
-
     r_list, r_points = create_robots(axis, args.manual)
     print(r_list)
     print(r_points)
-    # ani = FuncAnimation(fig, update, interval=1000, frames=60, fargs=(r_list, r_points))
-    # plt.show(block=True)
+    # ani = FuncAnimation(fig, update, interval=1000, frames=300, fargs=(r_list, r_points))
+    # writer = PillowWriter(fps=60)
+    # ani.save('2d_with_broken_4.gif', writer=writer)
+    # t = 0
+    # avgs = []
+    # while t < 20:
+    #     avg = plain_move(r_list, r_points)
+    #     avgs.append(avg)
+    #     t += 1
+    # plt.plot(avgs)
+    # plt.show()
     plain_move(r_list, r_points)
+

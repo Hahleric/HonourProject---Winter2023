@@ -13,13 +13,14 @@ from plain_move import plain_move
 # figure for line, 15*5 is the size of the figure
 LINE_FIGURE_SIZE = (15, 5)
 # number of robots we have in figure
-ROBOT_NUMBER = 20
+ROBOT_NUMBER = 10
 # length of the line
 N = 32768
 # random pick number
-RANDOM_PICK_NUMBER = 3
+RANDOM_PICK_NUMBER = 2
 # manually set the position of robots
-MANUAL_POSITION = True
+MANUAL_POSITION = False
+LINE_RANGE = 103
 
 # creating an x-axis
 fig = plt.figure(figsize=LINE_FIGURE_SIZE)
@@ -33,7 +34,7 @@ plt.xlim(-N, N)
 # create robots based on numbers, add their x and y to a list
 if MANUAL_POSITION:
     robot_list = []
-    x_lst = [i for i in range(ROBOT_NUMBER)]
+    x_lst = [1, 2, 3, 4, 5, 6, 7, 100, 101, 102]
     for i in range(ROBOT_NUMBER):
         # name = input("Please input robot name: ")
         # x = int(input("Please input robot x: "))
@@ -91,6 +92,7 @@ def line_update(robot_p, robot_l):
         robot_p[m].set_markersize(6.0)
         robot_p[m].set_xdata(x)
         robot_p[m].set_ydata(y)
+    return to_move_positions
 
 
 def is_finished(robot_points):
@@ -118,7 +120,7 @@ def update(n):
                 size = robot_points[i].get_markersize()
                 robot_points[i].set_markersize(size + 3)
                 robot_points[j].set_markersize(size + 3)
-    if is_finished():
+    if is_finished(robot_points):
         print("done")
         print(t)
         ani.pause()
@@ -132,10 +134,11 @@ def move_till_finished(robot_list, robot_points):
     count = 0
     while not is_finished(robot_points):
         count += 1
-        line_update(robot_points, robot_list)
+        first_move_position = line_update(robot_points, robot_list)
+        if count == 1:
+            final_position = first_move_position
         for m in range(len(robot_list)):
             robot_list[m].ano.set_position((robot_points[m].get_xdata(), robot_points[m].get_ydata()))
-    final_position = robot_points[0].get_xdata()
     return count, final_position
 
 
@@ -143,10 +146,10 @@ def plain_move(robot_list, robot_points):
     n = 0
     lst = []
     positions = []
-    original_list = robot_list.copy()
-    original_poinrts = robot_points.copy()
-    while n < 10000:
-        count, final_position = move_till_finished(robot_list, robot_points)
+    for i in range(LINE_RANGE):
+        positions.append(0)
+    while n < 100000:
+        count, final_positions = move_till_finished(robot_list, robot_points)
         n += 1
         # random reset the position of robots
         if MANUAL_POSITION:
@@ -156,9 +159,13 @@ def plain_move(robot_list, robot_points):
             for i in range(len(robot_points)):
                 robot_points[i].set_xdata(np.array([random.randint(-N, N)]))
                 robot_points[i].set_ydata(np.array([random.randint(-N, N)]))
-        positions.append(final_position)
+
         lst.append(count)
         print(n)
+        for i in final_positions:
+            x, y = i
+            positions[int(x)] += 1
+
 
     print(lst)
     lst = np.array(lst)
@@ -166,7 +173,7 @@ def plain_move(robot_list, robot_points):
     in_range_count = 0
     in_range_positions = []
     for i in range(len(positions)):
-        if 0 <= positions[i] <= 7:
+        if 0 <= positions[i] <= 5:
             in_range_count += 1
             in_range_positions.append(positions[i])
 
@@ -195,13 +202,15 @@ def plain_move(robot_list, robot_points):
     print("how many final positions are in range(0, 7): ", in_range_count)
     print("average of final positions in range(0, 7): ", np.average(in_range_positions))
     # print all number of points landing on each position
-    for i in range(ROBOT_NUMBER):
-        print("number of times position", i, "is landed on: ", positions.count(i))
-
-    point_counts = [positions.count(i) for i in range(ROBOT_NUMBER)]
-    plt.subplot(1, 2, 2)
-    plt.plot(point_counts)
-    plt.show(block=False)
+    for i in x_lst:
+        print("number of times position", i, "is landed on: ", positions[i])
+    # create bar chart for animation
+    point_counts = [positions[i] for i in x_lst]
 
 
-plain_move(robot_list, robot_points)
+
+
+
+# plain_move(robot_list, robot_points)
+ani = FuncAnimation(fig, update, interval=1000, frames=60)
+plt.show()
